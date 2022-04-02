@@ -1,0 +1,30 @@
+<!doctype html>
+<%- include('./partials/head.ejs') %>
+<%- include('./partials/header.ejs') %>
+<main class="main inspiratie">
+  <header class="unsplash">
+    <form class="userdataForm" method="post" action="/newPhoto">
+      <label for="category">Category</label>
+        <input type="text" class="category" id="category" name="category" aria-label="Pick a category"
+          placeholder="e.g. tree">
+      <!-- <button>Start</button> -->
+      <input type="submit" value="Start" class="start">
+    </form>
+
+  </header>
+  <section class="unsplashGallery">
+    <h2>gallery of photographs</h2>
+    <div class="masonry-with-columns">
+      <% photos.forEach(img => { %>
+      <article>
+        <figure>
+          <img style="border: 6.5px solid <%= img.color %>;" src= "<%= img.url %>" alt="<%= img.alt_description %>">
+        </figure>
+      </article>
+      <% }); %>
+    </div>
+  </section>
+</main>
+<footer class="footer">
+</footer>
+<%- include('./partials/foot.ejs') %>

@@ -1,0 +1,45 @@
+{
+  "name": "mongoose",
+  "version": "1.0.0",
+  "description": "Course in the Minor Everything Web.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deannabosschert/mongoose.git"
+  },
+  "keywords": [],
+  "author": "Deanna Bosschert",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/deannabosschert/mongoose/issues"
+  },
+  "homepage": "https://github.com/deannabosschert/mongoose#readme",
+  "main": "server.js",
+  "engines": {
+    "node": "^15.12.0",
+    "npm": "^7.6.3"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.2",
+    "node-sass": "^4.14.1",
+    "node-sass-glob-importer": "^5.3.2",
+    "nodemon": "^2.0.2",
+    "npm-run-all": "^4.1.5"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.2",
+    "dotenv": "^8.2.0",
+    "ejs": "^3.0.1",
+    "express": "^4.17.1",
+    "heroku": "^7.2.0",
+    "mongodb": "^3.6.6",
+    "node-fetch": "^2.6.0",
+    "socket.io": "^4.0.0"
+  },
+  "scripts": {
+    "dev:server": "nodemon server.js",
+    "dev:css": "sass --watch ./public/assets/scss:./public/",
+    "dev": "cross-env run-p dev:*",
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
