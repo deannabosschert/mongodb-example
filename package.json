@@ -1,18 +1,18 @@
 {
-  "name": "mongoose",
+  "name": "mongodb-example",
   "version": "1.0.0",
-  "description": "Course in the Minor Everything Web.",
+  "description": "Example usage of mongodb atlas database.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deannabosschert/mongoose.git"
+    "url": "git+https://github.com/deannabosschert/mongodb-example.git"
   },
   "keywords": [],
   "author": "Deanna Bosschert",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/deannabosschert/mongoose/issues"
+    "url": "https://github.com/deannabosschert/mongodb-example/issues"
   },
-  "homepage": "https://github.com/deannabosschert/mongoose#readme",
+  "homepage": "https://github.com/deannabosschert/mongodb-example#readme",
   "main": "server.js",
   "engines": {
     "node": "^15.12.0",
