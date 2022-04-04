@@ -6,7 +6,6 @@ const http = require('http').Server(app)
 const { MongoClient } = require("mongodb")
 const MongoDBSession = require('connect-mongodb-session')(session)
 const bodyParser = require('body-parser')
-// const multer = require('multer')
 require('dotenv').config() 
 
 const sessionID = 'sessionID'
