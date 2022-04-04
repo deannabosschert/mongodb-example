@@ -1,12 +1,15 @@
+const fetch = require("node-fetch")
 const express = require('express')
 const app = express()
-const fetch = require("node-fetch")
+const session = require('express-session')
 const http = require('http').Server(app)
 const { MongoClient } = require("mongodb")
+const MongoDBSession = require('connect-mongodb-session')(session)
 const bodyParser = require('body-parser')
+// const multer = require('multer')
 require('dotenv').config() 
 
-
+const sessionID = 'sessionID'
 const port = process.env.PORT || 3000 // set the port
 const url = process.env.MNG_URL // mongoDB url from '.env' file
 const dbName = process.env.DB_NAME // database name
@@ -15,7 +18,18 @@ const options = {
   useUnifiedTopology: true
 }
 
+const mongoSession = new MongoDBSession({
+  uri: url,
+  collection: process.env.C_NAME
+})
 
+mongoSession.on('error', (err) => {
+  console.log('MongoDB-session error:' + err)
+})
+
+
+app.set('view engine', 'ejs') // we are using ejs as our view engine (can also be handlebars if you prefer)
+app.set('views', './views') // where the page templates are
 app.use(express.static('public')) // serve static files from the 'public' folder
 // I think a few of those body-parsers are deprecated/unnecessary..
 app.use(bodyParser.json()) // to support JSON-encoded bodies
@@ -24,9 +38,17 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
 }))
 app.use(express.json()); // to support JSON-encoded bodies
 app.use(express.urlencoded()); // to support URL-encoded bodies
-
-app.set('view engine', 'ejs') // we are using ejs as our view engine (can also be handlebars if you prefer)
-app.set('views', './views') // where the page templates are
+app.use(session({
+  name: sessionID,
+  secret: process.env.SESSION_SECRET,
+  store: mongoSession,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    sameSite: true,
+    secure: false
+  }
+}))
 app.get('/', function (req, res) { // when the user visits the homepage
   getGallery() // first, get the gallery data
     .then(data => { // then, render the homepage with the data
@@ -51,7 +73,7 @@ function newPhoto(req, res) {
   }
 }
 
-// API DATA
+// UNSPLASH API DATA
 function getData(category) {
   console.log(`getting unsplash data with '${category}' keyword`)
 
@@ -89,7 +111,7 @@ function cleanData(data) {
 }
 
 
-// GET OR STORE IN SCOREBOARD (DATABASE)
+// GET OR STORE IN GALLERY (DATABASE STUFF BELOW)
 async function addToGallery(data) {
   console.log('adding new photo to database')
 
