@@ -4,65 +4,76 @@ const fetch = require("node-fetch")
 const http = require('http').Server(app)
 const { MongoClient } = require("mongodb")
 const bodyParser = require('body-parser')
+require('dotenv').config() 
 
 
-require('dotenv').config()
+const port = process.env.PORT || 3000 // set the port
+const url = process.env.MNG_URL // mongoDB url from '.env' file
+const dbName = process.env.DB_NAME // database name
+const options = { 
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}
 
-const port = process.env.PORT || 3000
-const url = process.env.MNG_URL
-const dbName = process.env.DB_NAME
-const options = {useNewUrlParser: true, useUnifiedTopology: true }
 
-
-app.use(express.static('public'))
-app.use( bodyParser.json() )     // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+app.use(express.static('public')) // serve static files from the 'public' folder
+// I think a few of those body-parsers are deprecated/unnecessary..
+app.use(bodyParser.json()) // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
   extended: true
 }))
-app.use(express.json());       // to support JSON-encoded bodies
+app.use(express.json()); // to support JSON-encoded bodies
 app.use(express.urlencoded()); // to support URL-encoded bodies
-app.set('view engine', 'ejs')
-app.set('views', './views')
-app.get('/', function (req, res) {
-  getScoreboard()
-  .then(data => {
-    res.render('index.ejs', {photos: data})
-  }) 
+
+app.set('view engine', 'ejs') // we are using ejs as our view engine (can also be handlebars if you prefer)
+app.set('views', './views') // where the page templates are
+app.get('/', function (req, res) { // when the user visits the homepage
+  getGallery() // first, get the gallery data
+    .then(data => { // then, render the homepage with the data
+      res.render('index.ejs', {
+        photos: data // data is an array of objects, and we pass this data under the keyword 'photos' to the homepage 'index.ejs'
+      })
+    })
 })
-app.post('/newPhoto', function (req, res) {
+app.post('/newPhoto', (req, res) => { // when the user submits a new photo (when the form button is clicked, the form is submitted to this URL and the data is sent to the server and now accessible within this function)
+  newPhoto(req, res) // execute function 'newPhoto' below
+})
+
+
+function newPhoto(req, res) {
   try {
     getData(req.body.category)
-    .then(data =>  cleanData(data))
-    .then(data => addToScoreboard(data))
-    .then(data => getScoreboard(data))
-    .then(data => res.render('index.ejs', {photos: data}))
+      .then(data => cleanData(data))
+      .then(data => addToGallery(data))
+      .then(() => res.redirect('/'))
   } catch (err) {
     console.error(err)
   }
-})
+}
 
 // API DATA
 function getData(category) {
-  console.log('getting data')
+  console.log(`getting unsplash data with '${category}' keyword`)
+
   try {
     return fetch(`https://api.unsplash.com/photos/random/?count=1&query=${category}&client_id=${process.env.API_KEY}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.errors) {
-        return fetch(`https://api.unsplash.com/photos/random/?count=1&client_id=${process.env.API_KEY}`)
-         .then(res => res.json())
-      } else {
-        return data
-      }
-    }) 
-  }
-  catch (err) {
+      .then(res => res.json()) // parse the response as JSON
+      .then(data => {
+        if (data.errors) { // if there are errors (if the keyword is not found), return a random photo
+          return fetch(`https://api.unsplash.com/photos/random/?count=1&client_id=${process.env.API_KEY}`)
+            .then(res => res.json())
+        } else {
+          return data
+        }
+      })
+  } catch (err) {
     console.error(err)
   }
 }
 
 function cleanData(data) {
-  console.log('cleaning data')
+  console.log('cleaning unsplash data')
+
   return data.map(data => {
     return {
       id: data.id,
@@ -79,17 +90,18 @@ function cleanData(data) {
 
 
 // GET OR STORE IN SCOREBOARD (DATABASE)
-async function addToScoreboard(data) {
-  console.log('adding to scoreboard')
+async function addToGallery(data) {
+  console.log('adding new photo to database')
+
   data.map(async (data) => {
-    const client = await MongoClient.connect(url, options)
-    await client.db(dbName).collection('unsplash_photos_test').findOneAndUpdate({
-      "id": data.id
+    const client = await MongoClient.connect(url, options) // connect to the database
+    await client.db(dbName).collection('unsplash_photos_test').findOneAndUpdate({ // find the photo in the database and update it (or insert if it doesn't exist yet)
+      "id": data.id // find the photo with the same id as the one we are adding
     }, {
       $inc: {
-        "score": 1
+        "score": 1 // if this picture is already in the database, increment 'score' by 1 (popularity)
       },
-      $setOnInsert: {
+      $setOnInsert: { // if this picture is not in the database, add it
         id: data.id,
         url: data.url,
         width: data.width,
@@ -102,26 +114,24 @@ async function addToScoreboard(data) {
       }
     }, {
       upsert: true,
-      multi: true,
+      multi: true, 
     })
-    client.close()
+    client.close() // close the connection
   })
 }
 
-async function getScoreboard() {
+async function getGallery() {
   try {
-    return MongoClient.connect(url, options)
+    return MongoClient.connect(url, options) // connect to the database
       .then(client => {
-        console.log('yeeeeet getting client')
-         return client.db(dbName).collection('unsplash_photos_test').find({}).sort([["score", -1]]).limit(30).toArray()
-        //  return client.db(dbName).collection('unsplash_photos_test').find({}).sort([["score", -1]]).limit(30).toArray()
+        console.log('getting client db and retrieving photos from collection')
+       
+        return client.db(dbName).collection('unsplash_photos_test').find({}).sort([["score", -1]]).limit(40).toArray() // get all the photos from the database and sort them by 'score' (popularity), limit the list to 40 photos and return them as an array
       })
   } catch (err) {
-    console.log('not happening')
     console.error(err)
   }
 }
-
 // PORT
 http.listen(port, () => {
   console.log('App listening on: ' + port)
